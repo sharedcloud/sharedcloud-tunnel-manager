@@ -3,7 +3,7 @@ import os
 
 from flask import Flask, request, jsonify
 
-app = Flask(__name__)
+application = Flask(__name__)
 
 
 TUNNEL_SERVER_REGISTRY_PATH = 'sharedcloud/sharedcloud-tunnel-server'
@@ -24,7 +24,7 @@ def _get_data_from_request(request):
     )
 
 
-@app.route("/open-tunnel", methods=['POST'])
+@application.route("/open-tunnel", methods=['POST'])
 def open_tunnel():
     """
     Open a tunnel based on the ports provided in the POST request
@@ -46,10 +46,12 @@ def open_tunnel():
             'error': 'Invalid request.'
         })
 
-    subprocess.Popen(['docker', 'pull', TUNNEL_SERVER_REGISTRY_PATH], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+    p = subprocess.Popen(['docker', 'pull', TUNNEL_SERVER_REGISTRY_PATH], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = p.communicate()
+    print(str(output))
+    print(str(error))
     cmd_args = [
-        'docker', 'run', '--rm', '--name', CONTAINER_NAME_PATTERN.format(http_service_port, tcp_port),
+        'docker', 'run', '--name', CONTAINER_NAME_PATTERN.format(http_service_port, tcp_port),
         '-e', 'HTTP_SERVICE_PORT={}'.format(http_service_port),
         '-e', 'TCP_PORT={}'.format(tcp_port),
         '-e', 'TOKEN={}'.format(token),
@@ -66,7 +68,7 @@ def open_tunnel():
     })
 
 
-@app.route("/close-tunnel", methods=['POST'])
+@application.route("/close-tunnel", methods=['POST'])
 def close_tunnel():
     """
     Close the tunnel created previously.

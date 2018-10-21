@@ -12,6 +12,7 @@ RUN set -ex \
             linux-headers \
             pcre-dev \
             python3 \
+            python3-dev \
     && python3 -m venv /venv \
     && /venv/bin/pip install -U pip \
     && LIBRARY_PATH=/lib:/usr/lib /bin/sh -c "/venv/bin/pip install --no-cache-dir -r /requirements.txt" \
@@ -25,13 +26,18 @@ RUN set -ex \
     && apk add --virtual .python-rundeps $runDeps \
     && apk del .build-deps
 
-RUN apk add --update bash
+RUN apk add --update bash nginx
 
 # Install code
 RUN mkdir /code/
 WORKDIR /code/
 ADD . /code/
 
-EXPOSE 8080
+RUN mv files/nginx.conf /etc/nginx/nginx.conf
 
-CMD ["/venv/bin/flask", "run", "--host", "0.0.0.0", "--port", "8080"]
+# uWSGI will listen on this port
+EXPOSE 8000
+
+ENV UWSGI_VIRTUALENV=/venv UWSGI_WSGI_FILE=/code/wsgi.py UWSGI_HTTP=:8000 UWSGI_MASTER=1 UWSGI_WORKERS=4 UWSGI_THREADS=1 UWSGI_UID=1000 UWSGI_GID=2000 UWSGI_LAZY_APPS=1 UWSGI_WSGI_ENV_BEHAVIOR=holy
+
+CMD /venv/bin/uwsgi --http-auto-chunked --http-keepalive --daemonize /tmp/uwsgi.log && nginx
