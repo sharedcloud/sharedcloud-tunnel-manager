@@ -26,18 +26,16 @@ RUN set -ex \
     && apk add --virtual .python-rundeps $runDeps \
     && apk del .build-deps
 
-RUN apk add --update bash nginx
+RUN apk add --update bash
 
 # Install code
 RUN mkdir /code/
 WORKDIR /code/
 ADD . /code/
 
-RUN mv files/nginx.conf /etc/nginx/nginx.conf
-
 # uWSGI will listen on this port
-EXPOSE 8000
+EXPOSE 80
 
-ENV UWSGI_VIRTUALENV=/venv UWSGI_WSGI_FILE=/code/wsgi.py UWSGI_HTTP=:8000 UWSGI_MASTER=1 UWSGI_WORKERS=4 UWSGI_THREADS=1 UWSGI_UID=1000 UWSGI_GID=2000 UWSGI_LAZY_APPS=1 UWSGI_WSGI_ENV_BEHAVIOR=holy
+ENV UWSGI_VIRTUALENV=/venv UWSGI_WSGI_FILE=/code/wsgi.py UWSGI_HTTP=:80 UWSGI_MASTER=1 UWSGI_WORKERS=4 UWSGI_THREADS=1 UWSGI_LAZY_APPS=1 UWSGI_WSGI_ENV_BEHAVIOR=holy
 
-CMD /venv/bin/uwsgi --http-auto-chunked --http-keepalive --daemonize /tmp/uwsgi.log && nginx
+CMD /venv/bin/uwsgi --http-auto-chunked --http-keepalive
